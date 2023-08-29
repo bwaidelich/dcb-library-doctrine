@@ -32,12 +32,12 @@
   },
   "autoload": {
     "psr-4": {
-      "Wwwision\\DCBLibrary\\": "src/"
+      "Wwwision\\DCBLibraryDoctrine\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Wwwision\\DCBLibrary\\Tests\\": "tests/"
+      "Wwwision\\DCBLibraryDoctrine\\Tests\\": "tests/"
     }
   },
   "scripts": {

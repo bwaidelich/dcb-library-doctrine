@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Wwwision\DCBLibrary\Adapters;
+namespace Wwwision\DCBLibraryDoctrine;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception as DBALException;

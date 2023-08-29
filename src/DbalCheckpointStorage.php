@@ -7,8 +7,8 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use Doctrine\DBAL\Platforms\MySQLPlatform;
-use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
+use Doctrine\DBAL\Platforms\MySqlPlatform;
+use Doctrine\DBAL\Platforms\PostgreSqlPlatform;
 use Doctrine\DBAL\Schema\Comparator;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Types\Types;
@@ -19,7 +19,7 @@ use Wwwision\DCBLibrary\ProvidesSetup;
 
 final class DbalCheckpointStorage implements CheckpointStorage, ProvidesSetup
 {
-    private MySQLPlatform|PostgreSQLPlatform $platform;
+    private MySqlPlatform|PostgreSQLPlatform $platform;
     private int|null $lockedSequenceNumber = null;
 
     public function __construct(
@@ -28,8 +28,8 @@ final class DbalCheckpointStorage implements CheckpointStorage, ProvidesSetup
         private readonly string $subscriberId,
     ) {
         $platform = $this->connection->getDatabasePlatform();
-        if (!($platform instanceof MySQLPlatform || $platform instanceof PostgreSQLPlatform)) {
-            throw new \InvalidArgumentException(sprintf('The %s only supports the platforms %s and %s currently. Given: %s', $this::class, MySQLPlatform::class, PostgreSQLPlatform::class, get_debug_type($platform)), 1691422911);
+        if (!($platform instanceof MySqlPlatform || $platform instanceof PostgreSqlPlatform)) {
+            throw new \InvalidArgumentException(sprintf('The %s only supports the platforms %s and %s currently. Given: %s', $this::class, MySqlPlatform::class, PostgreSqlPlatform::class, get_debug_type($platform)), 1691422911);
         }
         $this->platform = $platform;
     }
@@ -85,14 +85,15 @@ final class DbalCheckpointStorage implements CheckpointStorage, ProvidesSetup
 
     public function setup(): void
     {
-        $schemaManager = $this->connection->createSchemaManager();
+        $schemaManager = $this->connection->getSchemaManager();
+        assert($schemaManager !== null);
         $schema = new Schema();
         $table = $schema->createTable($this->tableName);
         $table->addColumn('subscriber', Types::STRING, ['length' => 255]);
         $table->addColumn('sequence_number', Types::INTEGER);
         $table->setPrimaryKey(['subscriber']);
 
-        $schemaDiff = (new Comparator())->compareSchemas($schemaManager->introspectSchema(), $schema);
+        $schemaDiff = (new Comparator())->compare($schemaManager->createSchema(), $schema);
         foreach ($schemaDiff->toSaveSql($this->platform) as $statement) {
             $this->connection->executeStatement($statement);
         }

@@ -1,0 +1,52 @@
+{
+  "name": "wwwision/dcb-library-doctrine",
+  "description": "DBAL adapters for the wwwision/dcb-library package",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Bastian Waidelich",
+      "email": "b.waidelich@wwwision.de"
+    }
+  ],
+  "funding": [
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/bwaidelich"
+    },
+    {
+      "type": "paypal",
+      "url": "https://www.paypal.me/bwaidelich"
+    }
+  ],
+  "require": {
+    "php": ">=8.1",
+    "wwwision/dcb-library": "@dev",
+    "doctrine/dbal": "^3.6"
+  },
+  "require-dev": {
+    "roave/security-advisories": "dev-latest",
+    "phpstan/phpstan": "^1.10",
+    "squizlabs/php_codesniffer": "^4.0.x-dev",
+    "phpunit/phpunit": "^10.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "Wwwision\\DCBLibrary\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Wwwision\\DCBLibrary\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test:phpstan": "phpstan",
+    "test:cs": "phpcs --colors src",
+    "test:cs:fix": "phpcbf --colors src",
+    "test": [
+      "@test:phpstan",
+      "@test:cs"
+    ]
+  }
+}

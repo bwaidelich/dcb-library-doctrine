@@ -1,2 +1,3 @@
-# dcb-library-doctrine
-DBAL adapters for the wwwision/dcb-library package
+# wwwision/dcb-library-doctrine
+
+DBAL adapters for the [wwwision/dcb-library](https://github.com/bwaidelich/dcb-library) package

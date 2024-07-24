@@ -21,8 +21,10 @@
   ],
   "require": {
     "php": ">=8.1",
-    "wwwision/dcb-library": "@dev",
-    "doctrine/dbal": "^3.6"
+    "doctrine/dbal": "^2.8 || ^3.6",
+    "wwwision/dcb-library": "dev-main",
+    "wwwision/dcb-eventstore": "dev-main",
+    "wwwision/types": "^1.2"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",

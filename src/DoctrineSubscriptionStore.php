@@ -50,6 +50,7 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
             (new Column('group_name', Type::getType(Types::STRING)))->setNotnull(true)->setLength(100)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', 'ascii_general_ci'),
             (new Column('run_mode', Type::getType(Types::STRING)))->setNotnull(true)->setLength(16)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', 'ascii_general_ci'),
             (new Column('position', Type::getType(Types::INTEGER)))->setNotnull(true),
+            (new Column('locked', Type::getType(Types::BOOLEAN)))->setNotnull(true),
             (new Column('status', Type::getType(Types::STRING)))->setNotnull(true)->setLength(32)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', 'ascii_general_ci'),
             (new Column('error_message', Type::getType(Types::TEXT)))->setNotnull(false),
             (new Column('error_previous_status', Type::getType(Types::STRING)))->setNotnull(false)->setLength(32)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', 'ascii_general_ci'),
@@ -116,11 +117,37 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
         return Subscriptions::fromArray(array_map(self::fromDatabase(...), $rows));
     }
 
+    public function acquireLock(SubscriptionId $subscriptionId): bool
+    {
+        $data = [
+            'locked' => 1,
+            'last_saved_at' => $this->clock->now()->format('Y-m-d H:i:s'),
+        ];
+        $acquired = $this->dbal->update($this->tableName, $data, [
+            'id' => $subscriptionId->value,
+            'locked' => 0,
+        ]);
+        return $acquired >= 1;
+    }
+
+    public function releaseLock(SubscriptionId $subscriptionId): void
+    {
+        $data = [
+            'locked' => 0,
+            'last_saved_at' => $this->clock->now()->format('Y-m-d H:i:s'),
+        ];
+        $this->dbal->update($this->tableName, $data, ['id' => $subscriptionId->value]);
+    }
+
     public function add(Subscription $subscription): void
     {
+        $row = self::toDatabase($subscription);
+        $row['id'] = $subscription->id->value;
+        $row['locked'] = 0;
+        $row['last_saved_at'] = $this->clock->now()->format('Y-m-d H:i:s');
         $this->dbal->insert(
             $this->tableName,
-            self::toDatabase($subscription->withLastSavedAt($this->clock->now())),
+            $row,
         );
     }
 
@@ -132,9 +159,11 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
         }
         /** @var Subscription $subscription */
         $subscription = $updater($subscription);
+        $row = self::toDatabase($subscription);
+        $row['last_saved_at'] = $this->clock->now()->format('Y-m-d H:i:s');
         $this->dbal->update(
             $this->tableName,
-            self::toDatabase($subscription->withLastSavedAt($this->clock->now())),
+            $row,
             [
                 'id' => $subscriptionId->value,
             ]
@@ -156,7 +185,6 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
     private static function toDatabase(Subscription $subscription): array
     {
         return [
-            'id' => $subscription->id->value,
             'group_name' => $subscription->group->value,
             'run_mode' => $subscription->runMode->name,
             'status' => $subscription->status->name,
@@ -165,7 +193,6 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
             'error_previous_status' => $subscription->error?->previousStatus?->name,
             'error_context' => null,//$subscription->error?->errorContext !== null ? json_encode($subscription->error->errorContext, JSON_THROW_ON_ERROR) : null,
             'retry_attempt' => $subscription->retryAttempt,
-            'last_saved_at' => $subscription->lastSavedAt->format('Y-m-d H:i:s'),
         ];
     }
 
@@ -183,6 +210,7 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
             instantiate(RunMode::class, $row['run_mode']),
             instantiate(Status::class, $row['status']),
             SequenceNumber::fromInteger((int)$row['position']),
+            (bool)$row['locked'],
             $subscriptionError,
             (int)$row['retry_attempt'],
             DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $row['last_saved_at']),

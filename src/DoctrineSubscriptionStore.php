@@ -6,6 +6,7 @@ namespace Wwwision\DCBLibraryDoctrine;
 use Closure;
 use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Platforms\SqlitePlatform;
 use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
@@ -44,16 +45,16 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
         $schemaConfig->setDefaultTableOptions([
             'charset' => 'utf8mb4'
         ]);
-
+        $isSqlite = $this->dbal->getDatabasePlatform() instanceof SqlitePlatform;
         $tableSchema = new Table($this->tableName, [
-            (new Column('id', Type::getType(Types::STRING)))->setNotnull(true)->setLength(self::maxLength(SubscriptionId::class))->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', 'ascii_general_ci'),
-            (new Column('group_name', Type::getType(Types::STRING)))->setNotnull(true)->setLength(100)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', 'ascii_general_ci'),
-            (new Column('run_mode', Type::getType(Types::STRING)))->setNotnull(true)->setLength(16)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', 'ascii_general_ci'),
+            (new Column('id', Type::getType(Types::STRING)))->setNotnull(true)->setLength(self::maxLength(SubscriptionId::class))->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', $isSqlite ? null : 'ascii_general_ci'),
+            (new Column('group_name', Type::getType(Types::STRING)))->setNotnull(true)->setLength(100)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', $isSqlite ? null : 'ascii_general_ci'),
+            (new Column('run_mode', Type::getType(Types::STRING)))->setNotnull(true)->setLength(16)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', $isSqlite ? null : 'ascii_general_ci'),
             (new Column('position', Type::getType(Types::INTEGER)))->setNotnull(true),
             (new Column('locked', Type::getType(Types::BOOLEAN)))->setNotnull(true),
-            (new Column('status', Type::getType(Types::STRING)))->setNotnull(true)->setLength(32)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', 'ascii_general_ci'),
+            (new Column('status', Type::getType(Types::STRING)))->setNotnull(true)->setLength(32)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', $isSqlite ? null : 'ascii_general_ci'),
             (new Column('error_message', Type::getType(Types::TEXT)))->setNotnull(false),
-            (new Column('error_previous_status', Type::getType(Types::STRING)))->setNotnull(false)->setLength(32)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', 'ascii_general_ci'),
+            (new Column('error_previous_status', Type::getType(Types::STRING)))->setNotnull(false)->setLength(32)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', $isSqlite ? null : 'ascii_general_ci'),
             (new Column('error_context', Type::getType(Types::JSON)))->setNotnull(false),
             (new Column('retry_attempt', Type::getType(Types::INTEGER)))->setNotnull(true),
             (new Column('last_saved_at', Type::getType(Types::DATETIME_IMMUTABLE)))->setNotnull(true),

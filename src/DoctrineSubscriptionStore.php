@@ -90,7 +90,7 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
             $queryBuilder->andWhere('id IN (:ids)')
                 ->setParameter(
                     'ids',
-                    $criteria->ids,
+                    $criteria->ids->toStringArray(),
                     Connection::PARAM_STR_ARRAY,
                 );
         }

@@ -54,7 +54,7 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
             (new Column('status', Type::getType(Types::STRING)))->setNotnull(true)->setLength(32)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', 'ascii_general_ci'),
             (new Column('error_message', Type::getType(Types::TEXT)))->setNotnull(false),
             (new Column('error_previous_status', Type::getType(Types::STRING)))->setNotnull(false)->setLength(32)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', 'ascii_general_ci'),
-            (new Column('error_context', Type::getType(Types::JSON)))->setNotnull(false),
+            (new Column('error_trace', Type::getType(Types::TEXT)))->setNotnull(false),
             (new Column('retry_attempt', Type::getType(Types::INTEGER)))->setNotnull(true),
             (new Column('last_saved_at', Type::getType(Types::DATETIME_IMMUTABLE)))->setNotnull(true),
         ]);
@@ -191,7 +191,7 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
             'position' => $subscription->position->value,
             'error_message' => $subscription->error?->errorMessage,
             'error_previous_status' => $subscription->error?->previousStatus?->name,
-            'error_context' => null,//$subscription->error?->errorContext !== null ? json_encode($subscription->error->errorContext, JSON_THROW_ON_ERROR) : null,
+            'error_trace' => $subscription->error?->errorTrace,
             'retry_attempt' => $subscription->retryAttempt,
         ];
     }
@@ -199,7 +199,7 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
     private static function fromDatabase(array $row): Subscription
     {
         if ($row['error_message'] !== null) {
-            $subscriptionError = new SubscriptionError($row['error_message'], instantiate(Status::class, $row['error_previous_status']));//, json_decode($row['error_context'], true, 512, JSON_THROW_ON_ERROR));
+            $subscriptionError = new SubscriptionError($row['error_message'], instantiate(Status::class, $row['error_previous_status']), $row['error_trace']);
         } else {
             $subscriptionError = null;
         }

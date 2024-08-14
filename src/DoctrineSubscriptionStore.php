@@ -54,7 +54,7 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
             (new Column('locked', Type::getType(Types::BOOLEAN)))->setNotnull(true),
             (new Column('status', Type::getType(Types::STRING)))->setNotnull(true)->setLength(32)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', $isSqlite ? null : 'ascii_general_ci'),
             (new Column('error_message', Type::getType(Types::TEXT)))->setNotnull(false),
-            (new Column('error_previous_status', Type::getType(Types::STRING)))->setNotnull(false)->setLength(32)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', 'ascii_general_ci'),
+            (new Column('error_previous_status', Type::getType(Types::STRING)))->setNotnull(false)->setLength(32)->setCustomSchemaOption('charset', 'ascii')->setCustomSchemaOption('collation', $isSqlite ? null : 'ascii_general_ci'),
             (new Column('error_trace', Type::getType(Types::TEXT)))->setNotnull(false),
             (new Column('retry_attempt', Type::getType(Types::INTEGER)))->setNotnull(true),
             (new Column('last_saved_at', Type::getType(Types::DATETIME_IMMUTABLE)))->setNotnull(true),

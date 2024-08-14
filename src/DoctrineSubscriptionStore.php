@@ -7,6 +7,7 @@ use Closure;
 use DateTimeImmutable;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Platforms\SqlitePlatform;
+use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
@@ -30,7 +31,6 @@ use function Wwwision\Types\instantiate;
 
 final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetup
 {
-
     public function __construct(
         private string $tableName,
         private readonly Connection $dbal,
@@ -40,7 +40,7 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
 
     public function setup(): void
     {
-        $schemaConfig = $this->dbal->getSchemaManager()?->createSchemaConfig();
+        $schemaConfig = $this->dbal->getSchemaManager()->createSchemaConfig();
         assert($schemaConfig !== null);
         $schemaConfig->setDefaultTableOptions([
             'charset' => 'utf8mb4'
@@ -111,7 +111,9 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
                     Connection::PARAM_STR_ARRAY,
                 );
         }
-        $rows = $queryBuilder->execute()->fetchAllAssociative();
+        $result = $queryBuilder->execute();
+        assert($result instanceof Result);
+        $rows = $result->fetchAllAssociative();
         if ($rows === []) {
             return Subscriptions::none();
         }
@@ -180,9 +182,15 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
         if (!$schema instanceof StringSchema) {
             throw new \InvalidArgumentException(sprintf('Only %s types are supported, got: %s for type "%s"', StringSchema::class, get_debug_type($schema), $type), 1721671411);
         }
+        if ($schema->maxLength === null) {
+            throw new \RuntimeException(sprintf('maxLength restriction is not set for type %s', $type), 1723636955);
+        }
         return $schema->maxLength;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private static function toDatabase(Subscription $subscription): array
     {
         return [
@@ -197,24 +205,40 @@ final class DoctrineSubscriptionStore implements SubscriptionStore, ProvidesSetu
         ];
     }
 
+    /**
+     * @param array<string, mixed> $row
+     */
     private static function fromDatabase(array $row): Subscription
     {
-        if ($row['error_message'] !== null) {
+        if (isset($row['error_message'])) {
+            assert(is_string($row['error_message']));
+            assert(!isset($row['error_previous_status']) || is_string($row['error_previous_status']));
+            assert(is_string($row['error_trace']));
             $subscriptionError = new SubscriptionError($row['error_message'], instantiate(Status::class, $row['error_previous_status']), $row['error_trace']);
         } else {
             $subscriptionError = null;
         }
+        assert(is_string($row['id']));
+        assert(is_string($row['group_name']));
+        assert(is_string($row['run_mode']));
+        assert(is_string($row['status']));
+        assert(is_int($row['position']));
+        assert(is_int($row['locked']));
+        assert(is_int($row['retry_attempt']));
+        assert(is_string($row['last_saved_at']));
+        $lastSavedAt = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $row['last_saved_at']);
+        assert($lastSavedAt instanceof DateTimeImmutable);
 
         return new Subscription(
             SubscriptionId::fromString($row['id']),
             instantiate(SubscriptionGroup::class, $row['group_name']),
             instantiate(RunMode::class, $row['run_mode']),
             instantiate(Status::class, $row['status']),
-            SequenceNumber::fromInteger((int)$row['position']),
+            SequenceNumber::fromInteger($row['position']),
             (bool)$row['locked'],
             $subscriptionError,
-            (int)$row['retry_attempt'],
-            DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $row['last_saved_at']),
+            $row['retry_attempt'],
+            $lastSavedAt,
         );
     }
 }

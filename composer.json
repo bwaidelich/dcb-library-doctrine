@@ -22,8 +22,8 @@
   "require": {
     "php": ">=8.1",
     "doctrine/dbal": "^2.8 || ^3.6",
-    "wwwision/dcb-library": "dev-main",
-    "wwwision/dcb-eventstore": "dev-main",
+    "wwwision/dcb-library": "^0.3",
+    "wwwision/dcb-eventstore": "*",
     "wwwision/types": "^1.2"
   },
   "require-dev": {

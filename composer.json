@@ -20,11 +20,11 @@
     }
   ],
   "require": {
-    "php": ">=8.1",
+    "php": ">=8.3",
     "doctrine/dbal": "^2.8 || ^3.6",
-    "wwwision/dcb-library": "^0.3",
-    "wwwision/dcb-eventstore": "*",
-    "wwwision/types": "^1.2"
+    "wwwision/dcb-library": "^0.4",
+    "wwwision/dcb-eventstore": "^4",
+    "wwwision/types": "^1.4"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",
